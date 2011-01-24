@@ -12,6 +12,7 @@ class PhysicalEnvironmentService implements PhysicalEnvironment {
     // Create and return dummy list
     List weatherData = []
     weatherData.add(new Weather())
+    log.info "generateWeatherData returns ${weatherData}"
     return weatherData
   }
 }
