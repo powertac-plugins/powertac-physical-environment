@@ -9,6 +9,9 @@ class PhysicalEnvironmentService implements PhysicalEnvironment {
   static transactional = true
 
   List<Weather> generateWeatherData(Timeslot currentTimeslot, List<Timeslot> targetTimeslots) {
-    return null  //To change body of implemented methods use File | Settings | File Templates.
+    // Create and return dummy list
+    List weatherData = []
+    weatherData.add(new Weather())
+    return weatherData
   }
 }
