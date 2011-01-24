@@ -26,8 +26,13 @@ grails.project.dependency.resolution = {
     //mavenRepo "http://repository.jboss.com/maven2/"
   }
   dependencies {
-    remoteRepository(id: "powertacPlugins", url: "http://ibwstinger.iw.uni-karlsruhe.de/artifactory/plugins-release-local/") {
-      authentication username: "[username]", password: "[password]"
-    }
+    // specify dependencies here under either 'build', 'compile', 'runtime', 'test' or 'provided' scopes eg.
+
+    // runtime 'mysql:mysql-connector-java:5.1.13'
+  }
+}
+grails.project.dependency.distribution = {
+  remoteRepository(id: "powertacPlugins", url: "http://ibwstinger.iw.uni-karlsruhe.de/artifactory/plugins-release-local/") {
+    authentication username: "[username]", password: "[password]"
   }
 }
