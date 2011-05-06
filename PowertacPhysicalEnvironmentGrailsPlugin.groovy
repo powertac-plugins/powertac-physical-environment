@@ -7,6 +7,7 @@ class PowertacPhysicalEnvironmentGrailsPlugin {
   def dependsOn = ['powertacCommon':'0.9 > *',
                      'powertacServerInterface':'0.1 > *',
                      'powertacRandom': '0.1 > *' ]
+
   // resources that are excluded from plugin packaging
   def pluginExcludes = [
       "grails-app/views/error.gsp"
