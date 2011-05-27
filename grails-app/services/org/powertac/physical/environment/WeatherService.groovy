@@ -3,17 +3,42 @@ package org.powertac.physical.environment
 import groovyx.net.http.*
 import static groovyx.net.http.ContentType.*
 import static groovyx.net.http.Method.*
+import org.joda.time.Instant
+
+import org.powertac.common.interfaces.TimeslotPhaseProcessor
 
 
-class WeatherService {
 
-    static transactional = true
-
-    def serviceMethod() {
-
-    }
+class WeatherService implements TimeslotPhaseProcessor {
+	static transactional = true
+    int weatherRequestInterval = 12
 	
-	def webRequest(url) {
+	
+	def timeService
+	def competitionControlService
+	
+	void init()
+	{
+	  competitionControlService.registerTimeslotPhase(this, 3)
+	}
+	
+	public void activate(Instant time, int phaseNumber) {
+		if (weatherRequestInterval > 24) {
+			log.error "weather request interval ${publicationInterval} > 24 hr"
+			weatherRequestInterval = 24
+		  }
+		  long msec = timeService.currentTime.millis
+		  if (msec % (weatherRequestInterval * TimeService.HOUR) == 0) {
+			// time to publish
+			log.info "Requesting Weather from Server at time: " + time
+			this.webRequest()	
+		  }
+		
+		
+	}
+	
+	
+	def webRequest() {
 		def http = new HTTPBuilder('http://ajax.googleapis.com')
 		
 		// perform a GET request, expecting JSON response data

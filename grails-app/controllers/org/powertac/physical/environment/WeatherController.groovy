@@ -1,6 +1,15 @@
 package org.powertac.physical.environment
 
 class WeatherController {
-
-    def index = { }
+	
+	WeatherService weatherService = new WeatherService();
+	
+	
+    def index = { 
+		render "Hello this is the index!"	
+	}
+	
+	def req = {
+		render weatherService.webRequest()		
+	}
 }
