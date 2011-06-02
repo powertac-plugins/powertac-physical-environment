@@ -6,7 +6,8 @@ import org.powertac.common.interfaces.InitializationService
 
 class WeatherInitializationService implements InitializationService {
 
-    static transactional = true
+	def weatherService
+    static transactional = false
 
 
 	@Override
@@ -19,6 +20,7 @@ class WeatherInitializationService implements InitializationService {
 	public String initialize(Competition competition,
 			List<String> completedInits) {
 		// TODO Auto-generated method stub
-		return null;
+		weatherService.init()
+		return "I win";
 	}	
 }
