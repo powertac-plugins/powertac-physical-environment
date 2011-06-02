@@ -56,17 +56,27 @@ class WeatherService implements TimeslotPhaseProcessor {
 		  response.success = { resp, reader ->
 			println resp.statusLine
 		
-			// parse the JSON response object:
-			reader.eachLine = { 
-				def result = []
-				result << it.split(",","[","]")
+			// parse the text response object:
+			reader.eachLine = {
+				//Parse the line into an array of parameters
+				def result = ""
+				it.each {
+					letter -> result += ((letter == "[" || letter == "]") ? "" : letter)
+						}
+						
+				def parameters = []
+				result.split(", ").each{
+					word ->	parameters += (word.split(":")[1].trim())
+						}
+				//println parameters
+				
 				
 				WeatherReport tmpWR = new WeatherReport(
 					currentTimeslot: time,
-					temperature: result[0],
-					windSpeed: result[1],
-					windDirection: result[2],
-					cloudCover: result[3])
+					temperature: parameters[0],
+					windSpeed: parameters[1],
+					windDirection: parameters[2],
+					cloudCover: parameters[3])
 				tmpWR.save()
 				
 			}
