@@ -21,6 +21,6 @@ class WeatherInitializationService implements InitializationService {
 			List<String> completedInits) {
 		// TODO Auto-generated method stub
 		weatherService.init()
-		return "I win";
+		return "Weather Service";
 	}	
 }
