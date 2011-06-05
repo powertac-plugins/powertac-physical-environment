@@ -15,7 +15,7 @@ class WeatherService implements TimeslotPhaseProcessor {
     int weatherRequestInterval = 12
 	
 	
-	
+	def brokerProxyService
 	def timeService
 	def competitionControlService
 	
@@ -36,9 +36,13 @@ class WeatherService implements TimeslotPhaseProcessor {
 			this.webRequest(time)	
 		  }
 		  
-		  log.info "Broadcasting weatherReport: "
-		  //def currentWeather = WeatherReport.findAll{it -> it.currentTimeslot == time}		
-		  // Broadcast ?  	
+		  
+		  
+		  // Finds the current weatherReport for the timeslot and broadcasts it every tick (phase3)
+		  def currentWeather = WeatherReport.findByCurrentTimeslot(Timeslot.currentTimeslot())
+		  
+		  log.info "Broadcasting weatherReport: " + currentWeather.currentTimeslot.toString()
+		  brokerProxyService?.broadcastMessage(currentWeather)
 		
 	}
 	
@@ -49,16 +53,16 @@ class WeatherService implements TimeslotPhaseProcessor {
 		
 		// perform a GET request, expecting TEXT response data
 		http.request( GET, TEXT ) {
-		
+		  def finishedParam = []
 		  // response handler for a success response code:
 		  response.success = { resp, reader ->
 			println resp.statusLine
-			println reader.text
+			//println reader.text
 			
 			
 			
 			// parse the text reader object:
-			//reader.text.eachLine { itt -> // 
+			reader.text.eachLine { itt -> // 
 				//Parse the line into an array of parameters
 				def line = "[key:value, key:value, key:value, key:value]"
 				
@@ -72,7 +76,7 @@ class WeatherService implements TimeslotPhaseProcessor {
 					word ->	parameters += (word.split(":")[1].trim())
 						}
 				//println parameters
-				
+				finishedParam = parameters
 				
 				WeatherReport tmpWR = new WeatherReport(
 					currentTimeslot: time,
@@ -80,10 +84,10 @@ class WeatherService implements TimeslotPhaseProcessor {
 					windSpeed: parameters[1],
 					windDirection: parameters[2],
 					cloudCover: parameters[3])
-				tmpWR.save()
+				tmpWR.save() //put assert here
 				
-			//} // eachLine
-			log.info "Server Response: " + parameters.toString()
+			} // eachLine
+			log.info "Server Response: " + finishedParam.toString()
 			//log.info "Server response" + reader.text
 		  }
 		
