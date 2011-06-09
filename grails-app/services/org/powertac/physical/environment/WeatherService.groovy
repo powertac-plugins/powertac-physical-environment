@@ -5,6 +5,7 @@ import static groovyx.net.http.ContentType.*
 import static groovyx.net.http.Method.*
 import org.joda.time.Instant
 
+import org.powertac.common.Timeslot
 import org.powertac.common.WeatherReport
 import org.powertac.common.interfaces.TimeslotPhaseProcessor
 
@@ -33,21 +34,31 @@ class WeatherService implements TimeslotPhaseProcessor {
 		  if (msec % (weatherRequestInterval * timeService.HOUR) == 0) {
 			// time to publish
 			log.info "Requesting Weather from Server at time: " + time
-			this.webRequest(time)	
+			this.webRequest(Timeslot.currentTimeslot())	
 		  }
 		  
 		  
 		  
 		  // Finds the current weatherReport for the timeslot and broadcasts it every tick (phase3)
-		  def currentWeather = WeatherReport.findByCurrentTimeslot(Timeslot.currentTimeslot())
+		  WeatherReport currentWeather = new WeatherReport(
+					currentTimeslot: Timeslot.currentTimeslot(),
+					temperature: "22",
+					windSpeed: "123",
+					windDirection: "4",
+					cloudCover: "50")
+		  // WeatherReport.findByCurrentTimeslot(Timeslot.currentTimeslot())
 		  
-		  log.info "Broadcasting weatherReport: " + currentWeather.currentTimeslot.toString()
+		  // Null Timeslot error bandaid
+		  log.info "Broadcasting weatherReport: " + currentWeather.currentTimeslot
+		  
+		  // Bandaid fix here
 		  brokerProxyService?.broadcastMessage(currentWeather)
+		  currentWeather.save()
 		
 	}
 	
 	
-	def webRequest(Instant time) {
+	def webRequest(Timeslot time) {
 		
 		HTTPBuilder http = new HTTPBuilder('http://www.google.com')
 		
@@ -60,11 +71,15 @@ class WeatherService implements TimeslotPhaseProcessor {
 			//println reader.text
 			
 			
-			
+			//Timeslot currentTime = Timeslot.currentTimeslot()
+			//Timeslot nextTime = Timeslot.currentTimeslot().next()
+			//if( currentTime == null){
+			//	println "currenTime1 is NULL"				
+			//}
 			// parse the text reader object:
 			reader.text.eachLine { itt -> // 
 				//Parse the line into an array of parameters
-				def line = "[key:value, key:value, key:value, key:value]"
+				def line = "[key:22.0, key:123, key:4, key:50]"
 				
 				def result = ""
 				line.each {
@@ -85,6 +100,8 @@ class WeatherService implements TimeslotPhaseProcessor {
 					windDirection: parameters[2],
 					cloudCover: parameters[3])
 				tmpWR.save() //put assert here
+				//currentTime = nextTime
+				//nextTime = nextTime.next()
 				
 			} // eachLine
 			log.info "Server Response: " + finishedParam.toString()
