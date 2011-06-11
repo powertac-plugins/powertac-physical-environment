@@ -14,7 +14,8 @@ import org.powertac.common.interfaces.TimeslotPhaseProcessor
 class WeatherService implements TimeslotPhaseProcessor {
 	static transactional = true
     int weatherRequestInterval = 12
-	
+	def serverUrl = "http://tac05.cs.umn.edu:8080/powertac-weather-server/weatherSet/weatherRequest?id=1"
+	boolean requestFailed
 	
 	def brokerProxyService
 	def timeService
@@ -33,25 +34,37 @@ class WeatherService implements TimeslotPhaseProcessor {
 		  long msec = timeService.currentTime.millis
 		  if (msec % (weatherRequestInterval * timeService.HOUR) == 0) {
 			// time to publish
-			log.info "Requesting Weather from Server at time: " + time
-			this.webRequest(Timeslot.currentTimeslot())	
+			log.info "Requesting Weather from "+ serverUrl +" at time: " + time
+			try {
+				// Need try/catch for invalid host strings
+				this.webRequest(Timeslot.currentTimeslot())
+				requestFailed = false
+			}catch(Throwable e){
+				log.error "Unable to connect to host: " + serverUrl
+				requestFailed = true
+				
+			}	
 		  }
 		  
-		  
-		  
+		  WeatherReport currentWeather
+		  if(requestFailed){
+			  // Set default weather to not break game
+			  WeatherReport tmpWR = new WeatherReport(
+				  currentTimeslot: Timeslot.currentTimeslot(),
+				  temperature: "17.2",
+				  windSpeed: "4.6",
+				  windDirection: "150",
+				  cloudCover: "0.0")
+			  
+			  tmpWR.save()
+			  
+		  }
 		  // Finds the current weatherReport for the timeslot and broadcasts it every tick (phase3)
-		  WeatherReport currentWeather = new WeatherReport(
-					currentTimeslot: Timeslot.currentTimeslot(),
-					temperature: "22",
-					windSpeed: "123",
-					windDirection: "4",
-					cloudCover: "50")
-		  // WeatherReport.findByCurrentTimeslot(Timeslot.currentTimeslot())
+		  currentWeather = WeatherReport.findByCurrentTimeslot(Timeslot.currentTimeslot())
+		  log.info "Broadcasting weatherReport at time: " + currentWeather.currentTimeslot
 		  
-		  // Null Timeslot error bandaid
-		  log.info "Broadcasting weatherReport: " + currentWeather.currentTimeslot
 		  
-		  // Bandaid fix here
+		  // Broadcast weather to brokers
 		  brokerProxyService?.broadcastMessage(currentWeather)
 		  currentWeather.save()
 		
@@ -60,57 +73,63 @@ class WeatherService implements TimeslotPhaseProcessor {
 	
 	def webRequest(Timeslot time) {
 		
-		HTTPBuilder http = new HTTPBuilder('http://www.google.com')
+		HTTPBuilder http = new HTTPBuilder(serverUrl)
 		
 		// perform a GET request, expecting TEXT response data
+		def currentTime = time
 		http.request( GET, TEXT ) {
 		  def finishedParam = []
 		  // response handler for a success response code:
 		  response.success = { resp, reader ->
-			println resp.statusLine
-			//println reader.text
+			println resp.statusLine			
 			
-			
-			//Timeslot currentTime = Timeslot.currentTimeslot()
-			//Timeslot nextTime = Timeslot.currentTimeslot().next()
-			//if( currentTime == null){
-			//	println "currenTime1 is NULL"				
-			//}
 			// parse the text reader object:
 			reader.text.eachLine { itt -> // 
 				//Parse the line into an array of parameters
-				def line = "[key:22.0, key:123, key:4, key:50]"
-				
+				def line = itt
+
 				def result = ""
 				line.each {
 					letter -> result += ((letter == "[" || letter == "]") ? "" : letter)
 						}
 						
 				def parameters = []
-				result.split(", ").each{
+				result.split(", ")?.each{
 					word ->	parameters += (word.split(":")[1].trim())
 						}
-				//println parameters
+				
 				finishedParam = parameters
 				
 				WeatherReport tmpWR = new WeatherReport(
-					currentTimeslot: time,
-					temperature: parameters[0],
-					windSpeed: parameters[1],
-					windDirection: parameters[2],
-					cloudCover: parameters[3])
-				tmpWR.save() //put assert here
-				//currentTime = nextTime
-				//nextTime = nextTime.next()
+					currentTimeslot: currentTime,
+					temperature: parameters[2],
+					windSpeed: parameters[3],
+					windDirection: parameters[4],
+					cloudCover: parameters[5])
+				currentTime = currentTime.next()
+				
+				tmpWR.save() 
 				
 			} // eachLine
 			log.info "Server Response: " + finishedParam.toString()
-			//log.info "Server response" + reader.text
 		  }
 		
 		  // handler for any failure status code:
 		  response.failure = { resp ->
 			println "Unexpected error: ${resp.statusLine.statusCode} : ${resp.statusLine.reasonPhrase}"
+			log.error "Weather Server Error: ${resp.statusLine.statusCode}"
+			
+			
+			WeatherReport tmpWR = new WeatherReport(
+				currentTimeslot: currentTime,
+				temperature: "17.2",
+				windSpeed: "4.6",
+				windDirection: "150",
+				cloudCover: "0.0")
+			currentTime = currentTime.next()
+			
+			tmpWR.save()
+			
 		  }
 		}
 	}
