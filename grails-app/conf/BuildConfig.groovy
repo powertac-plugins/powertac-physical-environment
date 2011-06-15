@@ -2,6 +2,7 @@ grails.project.class.dir = "target/classes"
 grails.project.test.class.dir = "target/test-classes"
 grails.project.test.reports.dir = "target/test-reports"
 //grails.project.war.file = "target/${appName}-${appVersion}.war"
+
 grails.plugin.location.PowertacCommon = "../powertac-common"
 grails.plugin.location.PowertacServerInterface = "../powertac-server-interface"
 grails.plugin.location.PowertacRandom = "../powertac-random"
@@ -35,10 +36,5 @@ grails.project.dependency.resolution = {
 	excludes 'groovy', 'xml-apis'  
   }
     // runtime 'mysql:mysql-connector-java:5.1.13'
-  }
-}
-grails.project.dependency.distribution = {
-  remoteRepository(id: "powertacPlugins", url: "http://ibwstinger.iw.uni-karlsruhe.de/artifactory/plugins-release-local/") {
-    authentication username: "[username]", password: "[password]"
   }
 }
